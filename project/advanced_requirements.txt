@@ -1,0 +1,13 @@
+speech_recognition==3.10.0
+pyttsx3==2.90
+requests==2.31.0
+beautifulsoup4==4.12.2
+pyaudio==0.2.11
+openai==0.28.1
+wikipedia==1.4.0
+wolframalpha==5.0.0
+yfinance==0.2.18
+pyautogui==0.9.54
+psutil==5.9.5
+schedule==1.2.0
+aiohttp==3.8.5

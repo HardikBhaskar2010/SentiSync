@@ -1,0 +1,7 @@
+{
+  "voice_rate": 200,
+  "voice_volume": 0.9,
+  "voice_id": 0,
+  "wake_word": "jarvis",
+  "auto_listen": true
+}
