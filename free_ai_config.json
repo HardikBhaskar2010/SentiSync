@@ -1,0 +1,17 @@
+{
+  "voice_rate": 200,
+  "voice_volume": 0.9,
+  "voice_id": 0,
+  "wake_word": "jarvis",
+  "auto_listen": true,
+  "ai_service": "huggingface",
+  "huggingface_token": "",
+  "groq_api_key": "",
+  "together_api_key": "",
+  "weather_api_key": "",
+  "news_api_key": "",
+  "max_conversation_history": 10,
+  "enable_learning": true,
+  "personality_mode": "friendly",
+  "fallback_responses": true
+}
