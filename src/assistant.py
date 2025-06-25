@@ -18,6 +18,7 @@ from typing import Dict, List, Optional
 import aiohttp
 import wikipedia
 import yfinance as yf
+import speech_recognition as sr
 from bs4 import BeautifulSoup
 
 from src.utils.voice import Voice
@@ -467,16 +468,17 @@ class Assistant:
                 logger.error(f"Text mode error: {e}")
 
     def run_voice_mode(self):
-        """Run assistant in voice mode."""
+        """Run assistant in voice mode with proper timeout handling."""
         print("\n🤖 Enhanced Jarvis Assistant - Voice Mode")
         print("Say 'Jarvis' to wake me up, then give your command.")
         print("Say 'quit' or 'exit' to stop.\n")
         
         while True:
             try:
-                # Listen for wake word
-                command = self.voice.listen(timeout=2)
+                # Listen for wake word - timeouts are normal, don't log them
+                command = self.voice.listen(timeout=3)
                 
+                # None means timeout or no speech - just continue silently
                 if command is None:
                     continue
                 
@@ -484,8 +486,15 @@ class Assistant:
                 if self.config['wake_word'] in command:
                     self.voice.speak("Yes? I'm listening.", 'attentive')
                     
-                    # Listen for actual command
-                    command = self.voice.listen(timeout=15)
+                    # Listen for actual command with longer timeout
+                    try:
+                        command = self.voice.listen(timeout=15)
+                    except Exception as e:
+                        # Only log unexpected errors, not timeouts
+                        if not isinstance(e, sr.WaitTimeoutError):
+                            logger.error(f"Error capturing command: {e}")
+                        continue
+                    
                     if command:
                         if not self.handle_command(command):
                             break
@@ -499,7 +508,9 @@ class Assistant:
                 self.voice.speak("Goodbye!", 'warm')
                 break
             except Exception as e:
-                logger.error(f"Voice mode error: {e}")
+                # Only log unexpected errors, not normal timeouts
+                if not isinstance(e, sr.WaitTimeoutError):
+                    logger.error(f"Voice mode error: {e}")
 
     def shutdown(self):
         """Gracefully shutdown the assistant."""

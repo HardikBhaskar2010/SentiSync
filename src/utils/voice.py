@@ -89,44 +89,50 @@ class Voice:
             logger.warning("TTS not available, text-only output")
 
     def listen(self, timeout=5, phrase_time_limit=10, offline_fallback=False):
-        """Listen for voice input with fallback options."""
+        """Listen for voice input with proper timeout handling."""
         try:
             with self.microphone as source:
                 print("🎤 Listening...")
                 self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
-                audio = self.recognizer.listen(
-                    source, 
-                    timeout=timeout, 
-                    phrase_time_limit=phrase_time_limit
-                )
+                
+                # Handle timeout at the listening level
+                try:
+                    audio = self.recognizer.listen(
+                        source, 
+                        timeout=timeout, 
+                        phrase_time_limit=phrase_time_limit
+                    )
+                except sr.WaitTimeoutError:
+                    # Normal timeout - no speech detected, not an error
+                    return None
             
             print("🔄 Processing speech...")
             
-            # Try Google Speech Recognition first
-            try:
-                text = self.recognizer.recognize_google(audio).lower()
-                print(f"👤 You said: {text}")
-                return text
-            except sr.RequestError:
-                if offline_fallback:
-                    # Fallback to offline recognition
-                    try:
-                        text = self.recognizer.recognize_sphinx(audio).lower()
-                        print(f"👤 You said (offline): {text}")
-                        return text
-                    except Exception as e:
-                        logger.warning(f"Offline recognition failed: {e}")
-                raise
+            # Try Google Speech Recognition first (unless offline forced)
+            if not offline_fallback:
+                try:
+                    text = self.recognizer.recognize_google(audio).lower()
+                    print(f"👤 You said: {text}")
+                    return text
+                except sr.RequestError as e:
+                    print(f"⚠️ Google STT failed: {e}. Trying offline fallback...")
+                    # Fall through to offline recognition
+                except sr.UnknownValueError:
+                    print("⚠️ Google STT could not understand audio.")
+                    return None
             
-        except sr.WaitTimeoutError:
-            return None
-        except sr.UnknownValueError:
-            logger.info("Speech not understood")
-            return None
-        except sr.RequestError as e:
-            logger.error(f"Speech recognition service error: {e}")
-            return None
+            # Offline fallback using PocketSphinx
+            try:
+                print("🔄 Processing with PocketSphinx (offline)...")
+                text = self.recognizer.recognize_sphinx(audio).lower()
+                print(f"👤 (offline) You said: {text}")
+                return text
+            except Exception as e:
+                logger.warning(f"Offline STT failed: {e}")
+                return None
+            
         except Exception as e:
+            # Only log unexpected errors, not timeouts
             logger.error(f"Unexpected listening error: {e}")
             return None
 
